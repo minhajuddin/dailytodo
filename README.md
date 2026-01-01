@@ -2,6 +2,8 @@
 
 A simple, elegant daily task tracker with support for day-specific tasks and visual organization.
 
+Use it now at https://minhajuddin.github.io/dailytodo/
+
 ## Features
 
 - ✅ Daily task tracking with completion status
