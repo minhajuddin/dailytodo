@@ -307,6 +307,22 @@
             border-top: 1px solid #ddd;
         }
 
+        .section-header {
+            margin-top: 16px;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .section-header:first-child {
+            margin-top: 0;
+        }
+
         @media (max-width: 600px) {
             .header h1 {
                 font-size: 24px;
@@ -351,7 +367,7 @@
             <!-- Edit List Tab -->
             <div id="edit" class="tab-view">
                 <div class="editor-instructions">
-                    Enter one task per line. Use <code>---</code> for spacers. Add tags like <code>#monday #weekend</code> to show tasks only on those days. Click "Save" to update your task list. <a href="README.md" style="color: #667eea; text-decoration: none;">Learn more →</a>
+                    Enter one task per line. Use <code>--- Section Name ---</code> for sections or <code>---</code> for spacers. Add tags like <code>#monday #weekend</code> to show tasks only on those days. Click "Save" to update your task list. <a href="README.md" style="color: #667eea; text-decoration: none;">Learn more →</a>
                 </div>
                 <div class="success-message" id="editSuccess">✓ Task list saved successfully!</div>
                 <textarea id="editTextarea" placeholder="Buy groceries&#10;Finish report&#10;Call mom&#10;..."></textarea>
@@ -441,6 +457,16 @@
             return task.trim() === '---';
         }
 
+        function isNamedSection(task) {
+            const trimmed = task.trim();
+            return /^---\s+.+\s+---$/.test(trimmed);
+        }
+
+        function extractSectionName(task) {
+            const trimmed = task.trim();
+            return trimmed.replace(/^---\s+|\s+---$/g, '').trim();
+        }
+
         function extractTaskAndTags(taskLine) {
             // Splits task into {text, tags}
             const text = taskLine.trim();
@@ -467,7 +493,7 @@
         }
 
         function taskAppliesToDate(taskLine, dateStr) {
-            if (isTaskSpacer(taskLine)) return true;
+            if (isTaskSpacer(taskLine) || isNamedSection(taskLine)) return true;
 
             const { tags } = extractTaskAndTags(taskLine);
             if (tags.length === 0) return true; // No tags means show every day
@@ -514,7 +540,10 @@
 
             let html = '<div class="task-list">';
             applicableTasks.forEach(({ task, index }) => {
-                if (isTaskSpacer(task)) {
+                if (isNamedSection(task)) {
+                    const sectionName = extractSectionName(task);
+                    html += `<div class="section-header">${escapeHtml(sectionName)}</div>`;
+                } else if (isTaskSpacer(task)) {
                     html += '<div class="spacer"></div>';
                 } else {
                     const { text } = extractTaskAndTags(task);
@@ -578,16 +607,21 @@
                 } else {
                     html += '<div class="history-day-tasks">';
                     applicableTasks.forEach(({ task, index }) => {
-                        const isCompleted = dayCompletions.includes(index);
-                        const status = isCompleted ? 'completed' : 'incomplete';
-                        const icon = isCompleted ? '✓' : '✗';
-                        const { text } = extractTaskAndTags(task);
-                        html += `
-                            <div class="history-task ${status}">
-                                <span class="history-task-icon">${icon}</span>
-                                <span>${escapeHtml(text)}</span>
-                            </div>
-                        `;
+                        if (isNamedSection(task)) {
+                            const sectionName = extractSectionName(task);
+                            html += `<div style="margin-top: 8px; margin-bottom: 8px; padding: 6px 8px; background: #f0f0f0; border-radius: 4px; font-weight: 600; font-size: 12px; color: #666;">${escapeHtml(sectionName)}</div>`;
+                        } else {
+                            const isCompleted = dayCompletions.includes(index);
+                            const status = isCompleted ? 'completed' : 'incomplete';
+                            const icon = isCompleted ? '✓' : '✗';
+                            const { text } = extractTaskAndTags(task);
+                            html += `
+                                <div class="history-task ${status}">
+                                    <span class="history-task-icon">${icon}</span>
+                                    <span>${escapeHtml(text)}</span>
+                                </div>
+                            `;
+                        }
                     });
                     html += '</div>';
                 }

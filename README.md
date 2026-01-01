@@ -31,26 +31,45 @@ Call mom
 Exercise
 ```
 
-### Spacers
+### Named Sections
 
-Create visual divisions between groups of tasks using `---`:
+Create organized sections with visual headers using `--- Section Name ---`:
 
 ```
-Morning Tasks
----
+--- Morning Routine ---
+Make coffee
+Shower
+Review calendar
+
+--- Work Tasks ---
+Check emails
+Team standup
+Project work
+
+--- Evening ---
+Cook dinner
+Read
+Wind down
+```
+
+Named sections will display as colored headers in your task list and help organize your tasks into logical groups.
+
+### Spacers
+
+Create simple visual divisions between groups using `---` on its own line:
+
+```
 Buy groceries
 Walk the dog
----
-Work Tasks
 ---
 Finish report
 Review emails
 ---
-Evening Tasks
----
 Call mom
 Exercise
 ```
+
+You can combine spacers with named sections for maximum flexibility.
 
 ### Day-Specific Tasks
 
@@ -86,27 +105,32 @@ Brunch #saturday #sunday    # Shows on weekends
 Here's a complete task list combining all features:
 
 ```
---- Weekday Morning Routine ---
+--- Morning Routine ---
 Make coffee
-Review calendar #weekday
-Meditation #weekday
+Review calendar
+Meditation
 
 --- Weekday Work ---
 Check emails #weekday
 Team standup #monday #wednesday #friday
 Project work #weekday
 
---- Weekend ---
+--- Weekend Activities ---
 Sleep in #weekend
 Brunch #weekend
 Laundry #saturday
 Meal prep #sunday
 
---- Daily ---
+--- Evening ---
 Exercise
 Read
 Wind down
 ```
+
+This example uses:
+- **Named sections** (`--- Section Name ---`) to organize tasks visually
+- **Day-specific tags** (`#weekday`, `#saturday`, etc.) to show tasks only on certain days
+- **Basic tasks** that appear every day
 
 ## Tabs
 
