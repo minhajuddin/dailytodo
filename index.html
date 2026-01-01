@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily TODO List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .content {
+            padding: 24px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-view {
+            display: none;
+        }
+
+        .tab-view.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .date-display {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .task-item:hover {
+            background: #f0f0f0;
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .task-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .task-text {
+            flex: 1;
+            word-break: break-word;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state p {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .empty-state button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .empty-state button:hover {
+            background: #764ba2;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 300px;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .editor-instructions {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+            background: #f0f7ff;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .history-day {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .history-day-date {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .history-day-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-task {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+            padding: 8px;
+        }
+
+        .history-task.completed {
+            color: #28a745;
+        }
+
+        .history-task.incomplete {
+            color: #dc3545;
+        }
+
+        .history-task-icon {
+            width: 20px;
+            margin-right: 12px;
+            text-align: center;
+        }
+
+        .success-message {
+            padding: 12px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                min-height: 300px;
+                padding: 16px;
+            }
+
+            .tab-button {
+                font-size: 13px;
+                padding: 12px;
+            }
+
+            textarea {
+                min-height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Daily TODO</h1>
+            <p>Track your daily progress</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" data-tab="today">Today</button>
+            <button class="tab-button" data-tab="edit">Edit List</button>
+            <button class="tab-button" data-tab="history">History</button>
+        </div>
+
+        <div class="content">
+            <!-- Today Tab -->
+            <div id="today" class="tab-view active">
+                <div class="date-display" id="todayDate"></div>
+                <div id="todayContent"></div>
+            </div>
+
+            <!-- Edit List Tab -->
+            <div id="edit" class="tab-view">
+                <div class="editor-instructions">
+                    Enter one task per line. Click "Save" to update your task list.
+                </div>
+                <div class="success-message" id="editSuccess">✓ Task list saved successfully!</div>
+                <textarea id="editTextarea" placeholder="Buy groceries&#10;Finish report&#10;Call mom&#10;..."></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="handleSaveMasterList()">Save</button>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history" class="tab-view">
+                <div id="historyContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== Storage Management =====
+        function loadMasterList() {
+            const stored = localStorage.getItem('dailytodo_masterlist');
+            if (!stored) return [];
+            return stored.split('\n').filter(task => task.trim() !== '');
+        }
+
+        function saveMasterList(tasks) {
+            const taskString = tasks.join('\n');
+            localStorage.setItem('dailytodo_masterlist', taskString);
+        }
+
+        function loadCompletions() {
+            const stored = localStorage.getItem('dailytodo_completions');
+            if (!stored) return {};
+            try {
+                return JSON.parse(stored);
+            } catch {
+                return {};
+            }
+        }
+
+        function saveCompletions(completions) {
+            localStorage.setItem('dailytodo_completions', JSON.stringify(completions));
+        }
+
+        function getTodayCompletions() {
+            const completions = loadCompletions();
+            const today = getCurrentDate();
+            return completions[today] || [];
+        }
+
+        function saveTodayCompletions(indices) {
+            const completions = loadCompletions();
+            const today = getCurrentDate();
+            completions[today] = indices;
+            saveCompletions(completions);
+        }
+
+        // ===== Date Utilities =====
+        function getCurrentDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getLast7Days() {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                days.push(`${year}-${month}-${day}`);
+            }
+            return days;
+        }
+
+        function formatDateForDisplay(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            const date = new Date(year, month - 1, day);
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // ===== UI Rendering =====
+        function renderTodayView() {
+            const tasks = loadMasterList();
+            const completions = getTodayCompletions();
+            const container = document.getElementById('todayContent');
+
+            // Update date display
+            document.getElementById('todayDate').textContent = formatDateForDisplay(getCurrentDate());
+
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>📋 No tasks yet</p>
+                        <p style="margin-bottom: 20px; font-size: 13px;">Create your first task list to get started.</p>
+                        <button onclick="switchTab('edit')">Create Task List</button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="task-list">';
+            tasks.forEach((task, index) => {
+                const isCompleted = completions.includes(index);
+                const checkedAttr = isCompleted ? 'checked' : '';
+                const completedClass = isCompleted ? 'completed' : '';
+                html += `
+                    <div class="task-item ${completedClass}">
+                        <input type="checkbox" ${checkedAttr} onchange="handleCheckboxChange(${index}, this.checked)">
+                        <span class="task-text">${escapeHtml(task)}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderEditView() {
+            const tasks = loadMasterList();
+            const textarea = document.getElementById('editTextarea');
+            textarea.value = tasks.join('\n');
+        }
+
+        function renderHistoryView() {
+            const days = getLast7Days();
+            const completions = loadCompletions();
+            const allTasks = loadMasterList();
+            let html = '';
+
+            days.forEach(dateStr => {
+                const dayCompletions = completions[dateStr] || [];
+                const completedCount = dayCompletions.length;
+                const totalCount = allTasks.length;
+                const percentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+
+                html += `
+                    <div class="history-day">
+                        <div class="history-day-date">
+                            ${formatDateForDisplay(dateStr)}
+                            <span style="color: #999; font-weight: normal; font-size: 13px;">
+                                (${completedCount}/${totalCount} - ${percentage}%)
+                            </span>
+                        </div>
+                `;
+
+                if (allTasks.length === 0) {
+                    html += '<div style="color: #999; font-size: 13px; padding: 8px;">No tasks</div>';
+                } else {
+                    html += '<div class="history-day-tasks">';
+                    allTasks.forEach((task, index) => {
+                        const isCompleted = dayCompletions.includes(index);
+                        const status = isCompleted ? 'completed' : 'incomplete';
+                        const icon = isCompleted ? '✓' : '✗';
+                        html += `
+                            <div class="history-task ${status}">
+                                <span class="history-task-icon">${icon}</span>
+                                <span>${escapeHtml(task)}</span>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            });
+
+            document.getElementById('historyContent').innerHTML = html;
+        }
+
+        function switchTab(tabName) {
+            // Update buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Update views
+            document.querySelectorAll('.tab-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+
+            // Render appropriate view
+            if (tabName === 'today') {
+                renderTodayView();
+            } else if (tabName === 'edit') {
+                renderEditView();
+            } else if (tabName === 'history') {
+                renderHistoryView();
+            }
+        }
+
+        // ===== Event Handlers =====
+        function handleCheckboxChange(index, checked) {
+            const completions = getTodayCompletions();
+
+            if (checked) {
+                if (!completions.includes(index)) {
+                    completions.push(index);
+                }
+            } else {
+                const idx = completions.indexOf(index);
+                if (idx > -1) {
+                    completions.splice(idx, 1);
+                }
+            }
+
+            saveTodayCompletions(completions);
+            renderTodayView();
+        }
+
+        function handleSaveMasterList() {
+            const textarea = document.getElementById('editTextarea');
+            const tasks = textarea.value
+                .split('\n')
+                .map(task => task.trim())
+                .filter(task => task !== '');
+
+            saveMasterList(tasks);
+
+            // Show success message
+            const successMsg = document.getElementById('editSuccess');
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ===== Tab Navigation =====
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                switchTab(tabName);
+            });
+        });
+
+        // ===== Initialize =====
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTodayView();
+        });
+    </script>
+</body>
+</html>
