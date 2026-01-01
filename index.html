@@ -301,6 +301,12 @@
             display: block;
         }
 
+        .spacer {
+            height: 12px;
+            margin: 8px 0;
+            border-top: 1px solid #ddd;
+        }
+
         @media (max-width: 600px) {
             .header h1 {
                 font-size: 24px;
@@ -345,7 +351,7 @@
             <!-- Edit List Tab -->
             <div id="edit" class="tab-view">
                 <div class="editor-instructions">
-                    Enter one task per line. Click "Save" to update your task list.
+                    Enter one task per line. Use <code>---</code> for spacers. Add tags like <code>#monday #weekend</code> to show tasks only on those days. Click "Save" to update your task list. <a href="README.md" style="color: #667eea; text-decoration: none;">Learn more →</a>
                 </div>
                 <div class="success-message" id="editSuccess">✓ Task list saved successfully!</div>
                 <textarea id="editTextarea" placeholder="Buy groceries&#10;Finish report&#10;Call mom&#10;..."></textarea>
@@ -430,37 +436,98 @@
             return date.toLocaleDateString('en-US', options);
         }
 
+        // ===== Task Parsing and Filtering =====
+        function isTaskSpacer(task) {
+            return task.trim() === '---';
+        }
+
+        function extractTaskAndTags(taskLine) {
+            // Splits task into {text, tags}
+            const text = taskLine.trim();
+            const tagMatches = text.match(/#(\w+)/g) || [];
+            const tags = tagMatches.map(tag => tag.slice(1).toLowerCase());
+            const taskText = text.replace(/#\w+/g, '').trim();
+            return { text: taskText, tags };
+        }
+
+        function getDayOfWeek(dateStr) {
+            if (!dateStr) dateStr = getCurrentDate();
+            const [year, month, day] = dateStr.split('-');
+            const date = new Date(year, month - 1, day);
+            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            return dayNames[date.getDay()];
+        }
+
+        function isWeekday(day) {
+            return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day);
+        }
+
+        function isWeekend(day) {
+            return ['saturday', 'sunday'].includes(day);
+        }
+
+        function taskAppliesToDate(taskLine, dateStr) {
+            if (isTaskSpacer(taskLine)) return true;
+
+            const { tags } = extractTaskAndTags(taskLine);
+            if (tags.length === 0) return true; // No tags means show every day
+
+            const dayOfWeek = getDayOfWeek(dateStr);
+
+            for (let tag of tags) {
+                if (tag === dayOfWeek) return true;
+                if (tag === 'weekday' && isWeekday(dayOfWeek)) return true;
+                if (tag === 'weekend' && isWeekend(dayOfWeek)) return true;
+            }
+
+            return false;
+        }
+
         // ===== UI Rendering =====
         function renderTodayView() {
             const tasks = loadMasterList();
             const completions = getTodayCompletions();
             const container = document.getElementById('todayContent');
+            const currentDate = getCurrentDate();
 
             // Update date display
-            document.getElementById('todayDate').textContent = formatDateForDisplay(getCurrentDate());
+            document.getElementById('todayDate').textContent = formatDateForDisplay(currentDate);
 
-            if (tasks.length === 0) {
+            // Filter tasks for today
+            const applicableTasks = [];
+            tasks.forEach((task, index) => {
+                if (taskAppliesToDate(task, currentDate)) {
+                    applicableTasks.push({ task, index });
+                }
+            });
+
+            if (applicableTasks.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p>📋 No tasks yet</p>
-                        <p style="margin-bottom: 20px; font-size: 13px;">Create your first task list to get started.</p>
-                        <button onclick="switchTab('edit')">Create Task List</button>
+                        <p>📋 No tasks for today</p>
+                        <p style="margin-bottom: 20px; font-size: 13px;">You have no scheduled tasks for today.</p>
+                        <button onclick="switchTab('edit')">Edit Task List</button>
                     </div>
                 `;
                 return;
             }
 
             let html = '<div class="task-list">';
-            tasks.forEach((task, index) => {
-                const isCompleted = completions.includes(index);
-                const checkedAttr = isCompleted ? 'checked' : '';
-                const completedClass = isCompleted ? 'completed' : '';
-                html += `
-                    <div class="task-item ${completedClass}">
-                        <input type="checkbox" ${checkedAttr} onchange="handleCheckboxChange(${index}, this.checked)">
-                        <span class="task-text">${escapeHtml(task)}</span>
-                    </div>
-                `;
+            applicableTasks.forEach(({ task, index }) => {
+                if (isTaskSpacer(task)) {
+                    html += '<div class="spacer"></div>';
+                } else {
+                    const { text } = extractTaskAndTags(task);
+                    const isCompleted = completions.includes(index);
+                    const checkedAttr = isCompleted ? 'checked' : '';
+                    const completedClass = isCompleted ? 'completed' : '';
+                    html += `
+                        <div class="task-item ${completedClass}">
+                            <input type="checkbox" ${checkedAttr} onchange="handleCheckboxChange(${index}, this.checked)">
+                            <span class="task-text">${escapeHtml(text)}</span>
+                        </div>
+                    `;
+                }
             });
             html += '</div>';
             container.innerHTML = html;
@@ -480,8 +547,20 @@
 
             days.forEach(dateStr => {
                 const dayCompletions = completions[dateStr] || [];
-                const completedCount = dayCompletions.length;
-                const totalCount = allTasks.length;
+
+                // Filter tasks for this specific day
+                const applicableTasks = [];
+                allTasks.forEach((task, index) => {
+                    if (taskAppliesToDate(task, dateStr) && !isTaskSpacer(task)) {
+                        applicableTasks.push({ task, index });
+                    }
+                });
+
+                const completedCount = dayCompletions.filter(idx => {
+                    const task = allTasks[idx];
+                    return task && !isTaskSpacer(task) && taskAppliesToDate(task, dateStr);
+                }).length;
+                const totalCount = applicableTasks.length;
                 const percentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
                 html += `
@@ -494,18 +573,19 @@
                         </div>
                 `;
 
-                if (allTasks.length === 0) {
-                    html += '<div style="color: #999; font-size: 13px; padding: 8px;">No tasks</div>';
+                if (applicableTasks.length === 0) {
+                    html += '<div style="color: #999; font-size: 13px; padding: 8px;">No tasks for this day</div>';
                 } else {
                     html += '<div class="history-day-tasks">';
-                    allTasks.forEach((task, index) => {
+                    applicableTasks.forEach(({ task, index }) => {
                         const isCompleted = dayCompletions.includes(index);
                         const status = isCompleted ? 'completed' : 'incomplete';
                         const icon = isCompleted ? '✓' : '✗';
+                        const { text } = extractTaskAndTags(task);
                         html += `
                             <div class="history-task ${status}">
                                 <span class="history-task-icon">${icon}</span>
-                                <span>${escapeHtml(task)}</span>
+                                <span>${escapeHtml(text)}</span>
                             </div>
                         `;
                     });
